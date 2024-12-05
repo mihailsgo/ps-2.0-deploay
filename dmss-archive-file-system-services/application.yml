@@ -1,0 +1,22 @@
+server:
+  port: 8096
+fileService:
+  baseDirectory: "/docs/"
+logging:
+  #config: ./src/main/resources/logback.xml
+  level:
+    root: info
+spring:
+  application:
+    name: dmss-archive-file-system-services
+  zipkin:
+    enabled: false
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+pdfConverter:
+  baseUrl: http://pdf-converter:3001/forms/libreoffice/convert
+springdoc:
+  swagger-ui:
+    use-root-path: true

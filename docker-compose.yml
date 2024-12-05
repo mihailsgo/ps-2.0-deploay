@@ -1,0 +1,102 @@
+networks:
+  default:
+services:
+  dmss-archive-services:
+    container_name: dmss-archive-services
+    restart: always
+    ports:
+      - '86:8090'
+    volumes:
+      - '/opt/trustlynx/ps/dmss-archive-services:/confs'
+    environment:
+      - SPRING_CONFIG_LOCATION=/confs/
+    image: 'trustlynx/dmss-archive-services:24.1.1.7'
+  dmss-container-and-signature-services:
+    container_name: dmss-container-and-signature-services
+    restart: always
+    ports:
+      - '84:8092'
+    volumes:
+      - './dmss-container-and-signature-services/template.pdf:/tmp/template.pdf'       
+      - './dmss-container-and-signature-services/template_LV.pdf:/tmp/template_LV.pdf'  
+      - './dmss-container-and-signature-services/template_EN.pdf:/tmp/template_EN.pdf'       
+      - '/opt/trustlynx/ps/dmss-container-and-signature-services:/confs'       
+    environment:
+      - SPRING_CONFIG_LOCATION=/confs/
+    image: 'trustlynx/container-signature-service:24.2.0.2'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"    
+  dmss-archive-services-fallback:
+    container_name: dmss-archive-services-fallback
+    restart: always
+    ports:
+      - '93:8095'
+    volumes:
+      - '/opt/trustlynx/ps/dmss-archive-services-fallback:/dmss-archive-services-fallback'
+      - '/opt/trustlynx/ps/docs:/docs'
+    environment:
+      - SPRING_CONFIG_LOCATION=/dmss-archive-services-fallback/application.yml
+    image: 'trustlynx/dmss-archive-services-fallback:24.0.5'
+  dmss-archive-file-system:
+    container_name: dmss-archive-file-system
+    ports:
+      - '97:8096'
+    restart: always
+    volumes:
+      - '/opt/trustlynx/ps/dmss-archive-file-system-services:/confs' # Use forward slashes here
+      - '/opt/trustlynx/ps/docs:/docs' # Use forward slashes here
+    environment:
+      - SPRING_CONFIG_LOCATION=/confs/
+    image: 'trustlynx/dmss-archive-file-system'
+  ps-server:
+    image: 'mihailsgordijenko/ps-server:0.9'
+    container_name: ps-server
+    ports:
+      - "3001:3001"
+    restart: always      
+    volumes:
+      - /opt/trustlynx/ps/config/templates/template_LV.pdf:/dev/apps/padsign/psapp/client/public/template_LV.pdf
+      - /opt/trustlynx/ps/config/templates/template_EN.pdf:/dev/apps/padsign/psapp/client/public/template_EN.pdf
+      - /opt/trustlynx/ps/config/config.js:/usr/src/app/config.js
+      - C:/PSDOCS:/PSDOCS
+  ps-client:
+    image: 'mihailsgordijenko/ps-client:4.0'
+    ports:
+      - "80:80"
+    restart: always  
+    volumes:
+      - /opt/trustlynx/ps/config/templates/template_LV.pdf:/var/www/html/template_LV.pdf  
+      - /opt/trustlynx/ps/config/templates/template_EN.pdf:/var/www/html/template_EN.pdf        
+      - /opt/trustlynx/ps/config/constants.json:/var/www/html/constants.json
+      - /opt/trustlynx/ps/config/TLlogo.png:/var/www/html/logo.png
+  digital-stamping-service:
+    container_name: digital-stamping-service
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+      - /opt/trustlynx/ps/digital-stamping-service/commands.sh:/scripts/commands.sh
+      - /opt/trustlynx/ps/digital-stamping-service:/confs
+      - /dev/:/dev/
+    environment:
+      - SPRING_CONFIG_LOCATION=/confs/
+    image: 'trustlynx/digital-stamping-service:24.0.2.2'
+  cors-anywhere:
+    image: redocly/cors-anywhere
+    container_name: cors-anywhere
+    ports:
+      - "8081:8081"
+    restart: always  
+    environment:
+      - PORT=8081
+      - CORSANYWHERE_ALLOWORIGIN=*
+      - CORSANYWHERE_BLACKLIST=
+      - CORSANYWHERE_WHITELIST=
+      - CORSANYWHERE_RATELIMIT=
+      - CORSANYWHERE_VERBOSE=true
+  #padsign-demo:
+    #image: mihailsgordijenko/padsign-demo:0.1
+    #container_name: padsign-demo
+    #ports:
+    #  - "8087:3000"
+    #restart: always  
